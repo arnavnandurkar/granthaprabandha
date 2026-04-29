@@ -1,0 +1,16 @@
+{
+    "name": "Granthaprabandha",
+    "short_name": "Library",
+    "description": "Personal Library Catalog System",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#926c15",
+    "icons": [
+    {
+      "src": "Technow Logo PNG.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}
