@@ -141,10 +141,6 @@
                 profileData = newProf;
             }
             profile = profileData;
-            let { data: catalogsData } = await supabase
-                .from('catalogs')
-                .select('*')
-                .order('created_at', { ascending: true });
             if (catalogsData && catalogsData.length > 0) {
                 catalogs = catalogsData;
                 currentCatalog = catalogs[0];
