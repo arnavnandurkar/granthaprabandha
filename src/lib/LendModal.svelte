@@ -64,12 +64,13 @@
                 bind:value={borrowerName} 
                 placeholder="e.g., Captain Nemo or @captain_nemo" 
                 class="input-field {searchError ? 'error-shake' : ''}" 
-                style={searchError ? 'border-color: #fb7185;' : ''}
+                style={searchError ? 'border-color: #910b0b;' : ''}
                 on:keydown={(e) => e.key === 'Enter' && handleLend()}
+                maxlength="30"
                 autofocus 
             />
             {#if searchError}
-                <span style="color: #fb7185; font-size: 0.8rem; display: block; margin-top: 0.5rem;">{searchError}</span>
+                <span style="color: #910b0b; font-size: 0.8rem; display: block; margin-top: 0.5rem;">{searchError}</span>
             {/if}
             
             <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">

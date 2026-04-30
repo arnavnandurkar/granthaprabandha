@@ -10,6 +10,9 @@
     export let onClose;
     export let onRename; 
     export let onDelete;
+    export let onShare;
+    
+
     let isCreating = false;
     let newCatalogName = "";
     let editingId = null;
@@ -64,6 +67,7 @@
                                     type="text" bind:value={editingName} class="input-field" 
                                     style="padding: 0.3rem; font-size: 0.9rem; flex-grow: 1;"
                                     on:keydown={(e) => e.key === 'Enter' && submitRename(catalog.id)} autofocus
+                                    maxlength="30"
                                 />
                                 <button class="btn-primary" style="padding: 0.2rem 0.5rem;" on:click={() => submitRename(catalog.id)}>OK</button>
                                 <button class="btn-secondary" style="padding: 0.2rem 0.5rem;" on:click={() => editingId = null}>✕</button>
@@ -71,6 +75,7 @@
                         {:else}
                             <div class="catalog-name" on:click={() => selectAndClose(catalog)}> {catalog.name}</div>
                             <div class="catalog-actions">
+                                <button class="icon-btn share-btn" style={catalog.is_public ? 'color: var(--accent-amber);' : ''} on:click|stopPropagation={() => onShare(catalog)} title={catalog.is_public ? 'Copy Link' : 'Make Public & Share'}>🔗</button>
                                 <button class="icon-btn edit-btn" on:click|stopPropagation={() => startEditing(catalog)} title="Rename">🖊️</button>
                                 <button class="icon-btn delete-btn" on:click|stopPropagation={() => onDelete(catalog.id)} title="Delete">🗑️</button>
                             </div>
@@ -81,7 +86,11 @@
             <div class="sidebar-actions" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
                 {#if isCreating}
                     <div transition:slide={{ duration: 200 }}>
-                        <input type="text" bind:value={newCatalogName} placeholder="Catalog name..." class="input-field" style="padding: 0.5rem; font-size: 0.9rem;" on:keydown={(e) => e.key === 'Enter' && handleCreate()} autofocus />
+                        <input type="text" bind:value={newCatalogName} placeholder="Catalog name..." 
+                        class="input-field" style="padding: 0.5rem; 
+                        font-size: 0.9rem;" 
+                        on:keydown={(e) => e.key === 'Enter' && handleCreate()}  
+                        maxlength="30" autofocus/>
                         <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
                             <button class="btn-primary" style="flex: 1; padding: 0.3rem;" on:click={handleCreate}>Save</button>
                             <button class="btn-secondary" style="flex: 1; padding: 0.3rem;" on:click={() => isCreating = false}>X</button>
@@ -174,6 +183,9 @@
         flex-grow: 1; 
         cursor: pointer; 
         padding: 0.75rem 0.5rem; 
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
         }
 
     .catalog-actions { 

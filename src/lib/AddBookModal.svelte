@@ -133,10 +133,16 @@
             <button class="close-btn" on:click={onClose}>✕</button>
         </div>
 <form on:submit|preventDefault={handleSubmit}>
+<details>
+  <summary style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">Info</summary>
+  <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">Add ISBN number and click 'Search' to automatically enter title and author.<br>Scan the barcode on the back of your book to automatically enter ISBN number.</p>
+</details><br>
             <div class="input-group">
-                <input type="text" bind:value={isbn} placeholder="ISBN Number">
+                <input type="text" bind:value={isbn} placeholder="ISBN Number" maxlength="20">
+                
                 <button type="button" class="btn-secondary" on:click={lookupISBN} disabled={isSearching}>
-                    {isSearching ? 'Searching...' : 'Lookup API'}
+                    {isSearching ? 'Searching...' : 'Search'}
+                    
                 </button>
                 {#if isScanning}
                     <button type="button" class="btn-danger" on:click={stopScanner}>Cancel Scan</button>
@@ -148,8 +154,8 @@
             </div>
             <div id="reader" style="display: {isScanning ? 'block' : 'none'};"></div>
             <div class="input-group">
-                <input type="text" bind:value={title} placeholder="Book Title" required>
-                <input type="text" bind:value={author} placeholder="Author Name" required>
+                <input type="text" bind:value={title} placeholder="Book Title" maxlength="100" required>
+                <input type="text" bind:value={author} placeholder="Author Name" maxlength="50" required>
             </div>
             <div class="input-group">
                 <input list="genre-list" bind:value={genre} placeholder="Genre (Type or Select)">
@@ -218,7 +224,12 @@
         border: 1px solid rgba(255, 255, 255, 0.1);
         box-shadow: 0 10px 20px -12px rgba(112, 79, 8, 0.5);
     }
-    .modal-header {display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .modal-header {
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 2rem; 
+        }
     .modal-header h3 {color: var(--accent-gold); font-family: 'Playfair Display', serif; font-size: 1.8rem; margin: 0; }
     .close-btn { background: transparent; border: none; color: var(--text-secondary); font-size: 1.5rem; cursor: pointer; padding: 0.5rem; }
     .close-btn:hover { color: var(--danger-muted); }

@@ -8,6 +8,14 @@
     let loading = false;
     let authMessage = '';
 
+    async function loginWithGitHub() {
+        loading = true;
+        const { error } = await supabase.auth.signInWithOAuth({ provider: 'github' });
+        if (error) {
+            authMessage = error.message;
+            loading = false;
+        }
+    }
     async function handleAuth() {
         loading = true;
         authMessage = '';
@@ -35,7 +43,17 @@
             <h1>{isLogin ? 'Welcome Back' : 'Begin Your Library'}</h1>
             <p>Enter your credentials to access your library.</p>
         </div>
+            <button type="button" class="btn-primary" style="background: #24292e; color: white; display: flex; align-items: center; justify-content: center; gap: 0.5rem; border: none;" on:click={loginWithGitHub}>
+                <img src="https://www.svgrepo.com/show/512317/github-142.svg" alt="GitHub" style="filter: invert(1); width: 18px; height: 18px;" />
+                Continue with GitHub
+            </button>
+        
 
+        <div style="display: flex; align-items: center; text-align: center; color: var(--text-secondary); margin-bottom: 1.5rem; font-size: 0.85rem;">
+            <hr style="flex: 1; border-color: rgba(255,255,255,0.1);" />
+            <span style="padding: 0 10px;">or continue with email</span>
+            <hr style="flex: 1; border-color: rgba(255,255,255,0.1);" />
+        </div>
         <form on:submit|preventDefault={handleAuth} class="auth-form">
             <div class="form-group">
                 <label for="email">Email</label>

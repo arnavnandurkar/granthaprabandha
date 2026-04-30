@@ -29,7 +29,6 @@
         </div>
     </div>
 </div>
-
 <style>
     .modal-backdrop { 
         position: fixed; 

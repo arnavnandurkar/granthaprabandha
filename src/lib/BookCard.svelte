@@ -107,21 +107,21 @@
     <td data-label="Actions">
        <div class="btn-actions">
         {#if !isBorrowed}
-        <button class="btn-danger" on:click={onDelete}>
+        <button class="bookcardbtnsdanger" on:click|stopPropagation={onDelete}>
             Delete
         </button>
 
         {#if isLent}
-            <button class="btn-secondary" style="color: var(--accent-gold);" on:click={() => onUpdate({ borrower: "" })}>
-                Mark Returned
+            <button class="bookcardbtns1" style="color: var(--accent-gold);" on:click|stopPropagation={() => onUpdate({ borrower: "" })}>
+                Return
             </button>
         {:else}
-            <button class="btn-secondary" on:click={onOpenLend}>
+            <button class="bookcardbtns1" on:click|stopPropagation={onOpenLend}>
                 Lend
             </button>
         {/if}
 
-        <button class="btn-secondary" on:click={onEdit}>
+        <button class="bookcardbtns2" on:click|stopPropagation={onEdit}>
             Edit
         </button>
     {/if}
@@ -180,9 +180,16 @@
 </tr>
 {/if}
 <style>
-    .clickable-row { cursor: pointer; transition: background 0.3s ease; }
-    .clickable-row:hover { background: var(--glass-surface-hover); }
-    .clickable-row.expanded td { border-bottom: none;}
+    .clickable-row { 
+        cursor: pointer;
+         transition: background 0.3s ease; 
+         }
+    .clickable-row:hover { 
+        background: var(--glass-surface-hover); 
+        }
+    .clickable-row.expanded td {
+         border-bottom: none;
+         }
     
     .drawer-content {
         background: rgba(0, 0, 0, 0.15); 
@@ -191,20 +198,37 @@
         box-shadow: inset 0 8px 10px -10px rgba(0,0,0,0.3);
     }
     :global(.light-mode) .drawer-content { background: rgba(0, 0, 0, 0.03); }
-    .drawer-grid { display: flex; gap: 3rem; flex-wrap: wrap; }
+    .drawer-grid { 
+        display: flex; 
+        gap: 3rem; 
+        flex-wrap: wrap; }
     .drawer-label { 
         display: block; font-size: 0.75rem; text-transform: uppercase; 
         letter-spacing: 0.1em; color: var(--text-secondary); margin-bottom: 0.5rem; font-weight: 600;
     }
-
-    .stars { display: flex; gap: 0.25rem; }
-    .star-icon { width: 24px; height: 24px; cursor: pointer; transition: transform 0.2s, color 0.2s; }
-    .star-icon:hover { transform: scale(1.2); }
-    .star-icon.filled { color: var(--accent-gold); fill: var(--accent-gold); }
-    .star-icon.empty { color: var(--text-secondary); fill: transparent; opacity: 0.3; }
-    .notes-section { flex: 1; min-width: 250px; border-left: 1px solid var(--glass-border); padding-left: 2rem; }
-    .notes-text { color: var(--text-primary); font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; margin: 0; }
-    .notes-text.empty-notes { color: var(--text-secondary); font-style: italic; opacity: 0.7; }
+    .btn-actions {
+        display: flex;
+        align-items: center; 
+        justify-content: flex-end; 
+        gap: 0.5rem; 
+        flex-direction: column;
+    }
+    .stars { 
+        display: flex; gap: 0.25rem; }
+    .star-icon { 
+        width: 24px; height: 24px; cursor: pointer; transition: transform 0.2s, color 0.2s; }
+    .star-icon:hover { 
+        transform: scale(1.2); }
+    .star-icon.filled { 
+        color: var(--accent-gold); fill: var(--accent-gold); }
+    .star-icon.empty { 
+        color: var(--text-secondary); fill: transparent; opacity: 0.3; }
+    .notes-section { 
+        flex: 1; min-width: 250px; border-left: 1px solid var(--glass-border); padding-left: 2rem; }
+    .notes-text { 
+        color: var(--text-primary); font-size: 0.95rem; line-height: 1.6; white-space: pre-wrap; margin: 0; }
+    .notes-text.empty-notes { 
+        color: var(--text-secondary); font-style: italic; opacity: 0.7; }
     
    @media (max-width: 768px) {
         .drawer-grid { 
@@ -228,5 +252,13 @@
             width: 100% !important;
             justify-content: center;
         }
+        .btn-actions {
+        display: flex;
+        align-items: center; 
+        justify-content: flex-end; 
+        gap: 0.5rem; 
+        flex-direction: row;
+        padding-top: 2rem;
+    }
     }
 </style>
