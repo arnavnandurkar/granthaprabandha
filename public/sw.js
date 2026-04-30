@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 const CACHE_NAME = 'library-cache-v1';
 self.addEventListener('install', (event) => {
     event.waitUntil(
@@ -16,4 +17,24 @@ self.addEventListener('fetch', (event) => {
             return response || fetch(event.request);
         })
     );
+=======
+const CACHE_NAME = 'library-cache-v1';
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => {
+            return cache.addAll([
+                '/',
+                '/index.html',
+                '/manifest.json'
+            ]);
+        })
+    );
+});
+self.addEventListener('fetch', (event) => {
+    event.respondWith(
+        caches.match(event.request).then((response) => {
+            return response || fetch(event.request);
+        })
+    );
+>>>>>>> 3a1a39d (Initial commit- MVP ready for launch)
 });
