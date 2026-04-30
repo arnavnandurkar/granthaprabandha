@@ -68,7 +68,6 @@
         margin-bottom: 0.5rem; 
         color: #910b0b;
     }
-    
 
     .warning-icon {
         font-size: 2.5rem;
