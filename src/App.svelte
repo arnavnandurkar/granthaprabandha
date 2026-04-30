@@ -12,6 +12,7 @@
     import ProfileModal from './lib/ProfileModal.svelte';
     import Sidebar from './lib/Sidebar.svelte';
     import DeleteCatalogModal from './lib/DeleteCatalogModal.svelte';
+    import InfoModal from './lib/InfoModal.svelte';
 
     let isProfileModalOpen = false;
     let showAnalytics = false;
@@ -44,6 +45,9 @@
     let firstCatalogName = "";
     let isDeleteCatalogModalOpen = false;
     let currentDeletingCatalog = null;
+    let isPublicView = false;
+    let publicProfile = null;
+    let isInfoModalOpen = false;
 
     function handleCreateFirstCatalog() {
         if (firstCatalogName.trim()) {
@@ -91,6 +95,15 @@
         isModalOpen = false;
     }
     onMount(async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const shareId = urlParams.get('share');
+        
+        if (shareId) {
+            isPublicView = true;
+            await loadPublicCatalog(shareId);
+            return; 
+        }
+
         const { data } = await supabase.auth.getSession();
         session = data.session;
         if (session) fetchUserData(); 
@@ -100,12 +113,15 @@
             if (session) {
                 fetchUserData(); 
             } else {
-                books = []; 
-                profile = null;
-                catalogs = [];
-                currentCatalog = null;
+                books = []; profile = null; catalogs = []; currentCatalog = null;
             }
         });
+        
+        const savedTheme = localStorage.getItem('library-theme');
+        if (savedTheme === 'light') {
+            isLightMode = true;
+            document.documentElement.classList.add('light-mode');
+        }
     });
 
     async function fetchUserData() {
@@ -143,7 +159,7 @@
             showToast("Failed to load user data.", "error");
         }
     }
-
+    
     async function fetchBooksForCatalog(catalogId) {
         if (catalogId === 'borrowed') {
             const { data, error } = await supabase
@@ -205,7 +221,47 @@
             showToast("Failed to create catalog.", "error");
         }
     }
+async function loadPublicCatalog(catalogId) {
+        const { data: catalogData, error: catError } = await supabase
+            .from('catalogs').select('*').eq('id', catalogId).single();
+            
+        if (catError || !catalogData) {
+            showToast("This catalog is private or does not exist.", "error");
+            return;
+        }
+        currentCatalog = catalogData;
+        const { data: profileData } = await supabase
+            .from('profiles').select('*').eq('id', catalogData.user_id).single();
+        publicProfile = profileData;
+        const { data: bookData } = await supabase
+            .from('books').select('*').eq('catalog_id', catalogId).order('created_at', { ascending: false });
+        books = bookData || [];
+    }
 
+    async function handleShare(catalog) {
+        if (!catalog.is_public) {
+            const { error } = await supabase
+                .from('catalogs')
+                .update({ is_public: true })
+                .eq('id', catalog.id);
+            if (!error) {
+                catalog.is_public = true;
+                catalogs = [...catalogs]; 
+            } else {
+                showToast("Failed to make catalog public.", "error");
+                return;
+            }
+        }
+
+        const shareUrl = `${window.location.origin}${window.location.pathname}?share=${catalog.id}`;
+        
+        try {
+            await navigator.clipboard.writeText(shareUrl);
+            showToast("Share link copied to clipboard!", "success");
+        } catch (err) {
+            prompt("Copy this link to share your catalog:", shareUrl);
+        }
+    }
     $: filteredBooks = books
         .filter(b => 
             b.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -234,7 +290,20 @@
             toasts = toasts.filter(t => t.id !== id);
         }, 3000);
     }
-
+    async function handleLogout() {
+        try {
+            await supabase.auth.signOut();
+        } catch (err) {
+            console.warn("Server logout failed, forcing local clear:", err);
+        } finally {
+            session = null;
+            profile = null;
+            books = [];
+            catalogs = [];
+            currentCatalog = null;
+            window.location.reload();
+        }
+    }
     $: totalBooks = books.length;
     $: lentOut = books.filter(b => b.borrower).length;
     $: shelfStats = Object.entries(
@@ -434,7 +503,7 @@
 <header in:fade={{ duration: 1000 }}>
     <div class="header-content">
         <div class="title-group">
-            <h1 class="brand-font">Granthaprabandha</h1>
+            <h1 class="brand-font">Granthaprabandha<br>ग्रंथप्रबंध</h1>
         </div>
         <div style="display: flex; gap: 1rem;">
             <button class="theme-toggle" on:click={() => showAnalytics = !showAnalytics} title="View Insights">
@@ -463,6 +532,13 @@
                     </svg>
                 {/if}
             </button>
+            <button class="theme-toggle" on:click={() => isInfoModalOpen = true} title="About the App">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                </svg>
+            </button>
         </div>
     </div>
 </header>
@@ -483,133 +559,191 @@
         onClose={() => isSidebarOpen = false}
         onSelect={selectCatalog} 
         onCreate={createNewCatalog} 
-        onRename={renameCatalog}  onDelete={promptDeleteCatalog} />
+        onRename={renameCatalog}  
+        onDelete={promptDeleteCatalog} 
+        onShare={handleShare}
+        />
 {/if}
 
 <main class="container">
-    {#if !session}
-        <Auth />
-    {:else}
-       <header class="app-header">
-                <h1 class="header-title" title={currentCatalog?.name || 'Overview'}>
-                    {currentCatalog?.name || 'Overview'}
-                </h1>
-                
-                <div class="user-controls">
-                    <button class="btn-secondary profile-btn" on:click={() => isProfileModalOpen = true}>
-                        <span class="mobile-icon">👤</span>
-                        <span class="desktop-text">{profile?.username ? `@${profile.username}` : 'Profile'}</span>
-                    </button>
-                    <button class="btn-secondary logout-btn" on:click={() => supabase.auth.signOut()}>
-                        <span class="mobile-icon">→]</span>
-                        <span class="desktop-text">Logout</span>
-                    </button>
-                </div>
-            </header>
+    {#if isPublicView}
+        <div class="main-content">
             {#if !currentCatalog}
-                <div class="empty-state glass-panel" in:fly={{ y: 20, duration: 600 }}>
-                    <div class="empty-icon">📁</div>
-                    <h2>Create a Catalog</h2>
-                    <p>You don't have any active catalogs. Create a catalog to start adding your books.</p>
+                <div class="empty-state glass-panel">
+                    <div class="empty-icon">🔒</div>
+                    <h2>Private or Missing Catalog</h2>
+                    <p>This link is either invalid, or the owner has made it private.</p>
+                </div>
+            {:else}
+                <header class="app-header" style="flex-direction: column; align-items: center; text-align: center; margin-top: 0.5rem;">
+                    <div style="font-size: 3rem; margin-bottom: 0.5rem;">📖</div>
+                    <h1 class="header-title" style="font-family: 'Playfair Display', serif; color: var(--accent-gold);">
+                        {currentCatalog.name}
+                    </h1>
+                    <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+                        by <strong>@{publicProfile?.username || 'Unknown User'}</strong>
+                    </p>
+                </header>
+                <Analytics {books} isOpen={showAnalytics} />
+                <div class="controls-wrapper glass-panel">
+                    <input class="search-input" type="text" bind:value={searchQuery} placeholder="Search {books.length} books..." />
+                </div>
+
+                <div class="table-wrapper glass-panel" style="margin-top: 1.5rem;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Cover</th>
+                                <th>Details</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {#each filteredBooks as book (book.id)}
+                                <div transition:slide={{ duration: 300 }} animate:flip={{ duration: 400 }} style="display: contents;">
+                                    <BookCard {book} isBorrowed={true} /> 
+                                </div>
+                            {/each}
+                        </tbody>
+                    </table>
                     
-                    <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1.5rem; max-width: 400px; width: 100%; margin-left: auto; margin-right: auto;">
-                        <input 
-                            type="text" 
-                            bind:value={firstCatalogName} 
-                            placeholder="e.g., Main Library, To Read..." 
-                            class="input-field"
-                            on:keydown={(e) => e.key === 'Enter' && handleCreateFirstCatalog()}
-                        />
-                        <button class="btn-primary" style="padding: 0.75rem 1.5rem;" on:click={handleCreateFirstCatalog}>
-                            Create
+                    {#if filteredBooks.length === 0}
+                        <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                            No books match your current search.
+                        </div>
+                    {/if}
+                </div>
+            {/if}
+        </div>
+
+    {:else}
+        {#if !session}
+            <Auth />
+        {:else}
+            <div class="main-content">
+                <header class="app-header">
+                    <h1 class="header-title" title={currentCatalog?.name || 'Granthaprabandha'}>
+                        {currentCatalog?.name || 'Welcome to Granthaprabandha'}
+                    </h1>
+                    <div class="user-controls">
+                        <button class="btn-secondary profile-btn" on:click={() => isProfileModalOpen = true}>
+                            <span class="mobile-icon">👤</span>
+                            <span class="desktop-text">{profile?.username ? `@${profile.username}` : 'Profile'}</span>
+                        </button>
+                        <button class="btn-secondary logout-btn" on:click={handleLogout()}>
+                            <span class="mobile-icon">→]</span>
+                            <span class="desktop-text">Logout</span>
                         </button>
                     </div>
-                </div>
+                </header>
 
-            {:else}
-                <Analytics {books} isOpen={showAnalytics} />
-                
-                <div class="controls-wrapper glass-panel">
-                    <input class="search-input" type="text" bind:value={searchQuery} placeholder="Search by title or author..." />
-                    <div class="filters-grid">
-                        <select bind:value={filterGenre}>
-                            <option value="All">All Genres</option>
-                            {#each availableGenres as genre}{#if genre}<option value={genre}>{genre}</option>{/if}{/each}
-                        </select>
-
-                        <select bind:value={filterShelf}>
-                            <option value="All">All Shelves</option>
-                            {#each availableShelves as shelf}<option value={shelf}>Shelf {shelf}</option>{/each}
-                        </select>
-
-                        <select bind:value={filterFormat}>
-                            <option value="All">All Formats</option>
-                            {#each availableFormats as format}{#if format}<option value={format}>{format}</option>{/if}{/each}
-                        </select>
-
-                        <select bind:value={sortBy}>
-                            <option value="date-desc">Newest First</option>
-                            <option value="date-asc">Oldest First</option>
-                            <option value="title-asc">Title (A-Z)</option>
-                            <option value="title-desc">Title (Z-A)</option>
-                            <option value="author-asc">Author (A-Z)</option>
-                            <option value="author-desc">Author (Z-A)</option>
-                        </select>
-                    </div>
-                </div>
-
-{#if books.length === 0}
+                {#if !currentCatalog}
                     <div class="empty-state glass-panel" in:fly={{ y: 20, duration: 600 }}>
-                        {#if currentCatalog.id === 'borrowed'}
-                            <div class="empty-icon">👥</div>
-                            <h2>No Borrowed Books</h2>
-                            <p>When friends lend books to your <strong>@{profile?.username || 'username'}</strong> account, they will appear here.</p>
-                        {:else}
-                            <div class="empty-icon">📚</div>
-                            <h2>Make your library catalog</h2>
-                            <p>Add your first book to start building your catalog!</p>
-                            <button class="btn-primary" on:click={() => isModalOpen = true} style="margin-top: 1.5rem; padding: 1rem 2rem; font-size: 1.1rem;">
-                                + Add First Book
+                        <div class="empty-icon">📁</div>
+                        <h2>Create a Catalog</h2>
+                        <p>You don't have any catalogs. Create a catalog to start adding your books.</p>
+                        
+                        <div style="display: flex; gap: 0.5rem; justify-content: center; margin-top: 1.5rem; max-width: 400px; width: 100%; margin-left: auto; margin-right: auto;">
+                            <input 
+                                type="text" 
+                                bind:value={firstCatalogName} 
+                                placeholder="e.g., Main Library, To Read..." 
+                                class="input-field"
+                                maxlength="30"
+                                on:keydown={(e) => e.key === 'Enter' && handleCreateFirstCatalog()}
+                            />
+                            <button class="btn-primary" style="padding: 0.75rem 1.5rem;" on:click={handleCreateFirstCatalog}>
+                                Create
                             </button>
-                        {/if}
+                        </div>
                     </div>
                 {:else}
-                    <div class="table-wrapper glass-panel">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Cover</th>
-                                    <th>Details</th>
-                                    <th>Location</th>
-                                    <th>Status</th>
-                                    {#if currentCatalog.id !== 'borrowed'}
-                                        <th>Actions</th>
-                                    {/if}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {#each filteredBooks as book (book.id)}
-                                    <div transition:slide={{ duration: 300 }} animate:flip={{ duration: 400 }} style="display: contents;">
-                                        <BookCard 
-                                            {book} 
-                                            isBorrowed={currentCatalog.id === 'borrowed'} 
-                                            onDelete={() => openDeleteModal(book)} 
-                                            onUpdate={(updates) => updateBookDirectly(book.id, updates)}
-                                            onEdit={() => openModal(book)}
-                                            onOpenLend={() => openLendModal(book)}
-                                        />
-                                    </div>
-                                {/each}
-                            </tbody>
-                        </table>
-                        
-                        {#if filteredBooks.length === 0}
-                            <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
-                                No books match your current search and filters.
-                            </div>
-                        {/if}
+                    <Analytics {books} isOpen={showAnalytics} />
+                    
+                    <div class="controls-wrapper glass-panel">
+                        <input class="search-input" type="text" bind:value={searchQuery} placeholder="Search by title or author..." />
+                        <div class="filters-grid">
+                            <select bind:value={filterGenre}>
+                                <option value="All">All Genres</option>
+                                {#each availableGenres as genre}{#if genre}<option value={genre}>{genre}</option>{/if}{/each}
+                            </select>
+                            <select bind:value={filterShelf}>
+                                <option value="All">All Shelves</option>
+                                {#each availableShelves as shelf}<option value={shelf}>Shelf {shelf}</option>{/each}
+                            </select>
+                            <select bind:value={filterFormat}>
+                                <option value="All">All Formats</option>
+                                {#each availableFormats as format}{#if format}<option value={format}>{format}</option>{/if}{/each}
+                            </select>
+                            <select bind:value={sortBy}>
+                                <option value="date-desc">Newest First</option>
+                                <option value="date-asc">Oldest First</option>
+                                <option value="title-asc">Title (A-Z)</option>
+                                <option value="title-desc">Title (Z-A)</option>
+                                <option value="author-asc">Author (A-Z)</option>
+                                <option value="author-desc">Author (Z-A)</option>
+                            </select>
+                        </div>
                     </div>
-                {/if} {/if} {/if} </main>
+
+                    {#if books.length === 0}
+                        <div class="empty-state glass-panel" in:fly={{ y: 20, duration: 600 }}>
+                            {#if currentCatalog.id === 'borrowed'}
+                                <div class="empty-icon">👥</div>
+                                <h2>No Borrowed Books</h2>
+                                <p>When friends lend books to your <strong>@{profile?.username || 'username'}</strong> account, they will appear here.</p>
+                            {:else}
+                                <div class="empty-icon">📚</div>
+                                <h2>Make your library catalog</h2>
+                                <p>Add your first book to start building your catalog!</p>
+                                <button class="btn-primary" on:click={() => isModalOpen = true} style="margin-top: 1.5rem; padding: 1rem 2rem; font-size: 1.1rem;">
+                                    + Add First Book
+                                </button>
+                            {/if}
+                        </div>
+                    {:else}
+                        <div class="table-wrapper glass-panel">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Cover</th>
+                                        <th>Details</th>
+                                        <th>Location</th>
+                                        <th>Status</th>
+                                        {#if currentCatalog.id !== 'borrowed'}
+                                            <th>Actions</th>
+                                        {/if}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {#each filteredBooks as book (book.id)}
+                                        <div transition:slide={{ duration: 300 }} animate:flip={{ duration: 400 }} style="display: contents;">
+                                            <BookCard 
+                                                {book} 
+                                                isBorrowed={currentCatalog.id === 'borrowed'} 
+                                                onDelete={() => openDeleteModal(book)} 
+                                                onUpdate={(updates) => updateBookDirectly(book.id, updates)}
+                                                onEdit={() => openModal(book)}
+                                                onOpenLend={() => openLendModal(book)}
+                                            />
+                                        </div>
+                                    {/each}
+                                </tbody>
+                            </table>
+                            
+                            {#if filteredBooks.length === 0}
+                                <div style="text-align: center; padding: 3rem; color: var(--text-secondary);">
+                                    No books match your current search and filters.
+                                </div>
+                            {/if}
+                        </div>
+                    {/if} 
+                {/if} 
+            </div> 
+        {/if} 
+    {/if} 
+</main>
 {#if currentCatalog && currentCatalog.id !== 'borrowed'}
     <button id="fab" on:click={() => { editingIndex = null; isModalOpen = true; }}>+</button>
 {/if}
@@ -662,12 +796,16 @@
 {/if}
 {#if isProfileModalOpen}
     <ProfileModal 
-        {profile} 
-        onSave={updateProfile} 
-        onClose={() => isProfileModalOpen = false} 
-    />
+    profile={profile}
+    onClose={() => isProfileModalOpen = false} 
+    onUpdate={(newData) => {
+        profile = { ...profile, ...newData };
+    }}
+/>
 {/if}
-
+{#if isInfoModalOpen}
+    <InfoModal onClose={() => isInfoModalOpen = false} />
+{/if}
 <style>
     .shelf-stat-container {
         display: flex;

@@ -166,12 +166,50 @@ button, .btn {
     background: var(--glass-surface-hover); 
     border-color: var(--glass-border-highlight);
     transform: translateY(-2px); }
-
+.bookcardbtns1 { 
+    background: var(--glass-surface); 
+    color: var(--text-primary); 
+    border-color: var(--glass-border); 
+    backdrop-filter: blur(10px);
+    margin: 0;
+    line-height: 1;
+    padding: 0.6rem;
+    width: 4.25rem;
+   }
+.bookcardbtns1:hover { 
+    background: var(--glass-surface-hover); 
+    border-color: var(--glass-border-highlight);
+    transform: translateY(-2px); }
+.bookcardbtns2 { 
+    background: var(--glass-surface); 
+    color: var(--text-primary); 
+    border-color: var(--glass-border); 
+    backdrop-filter: blur(10px);
+    margin: 0;
+    line-height: 1;
+    padding: 0.6rem;
+    width: 4.25rem;
+   }
+.bookcardbtns2:hover { 
+    background: var(--glass-surface-hover); 
+    border-color: var(--glass-border-highlight);
+    transform: translateY(-2px); }
 .btn-danger { 
     background: transparent; 
     color: var(--danger-muted); 
     border-color: var(--glass-border); }
-
+.bookcardbtnsdanger { 
+    background: transparent; 
+    color: var(--danger-muted); 
+    border-color: var(--glass-border); 
+    margin: 0; 
+    line-height: 1;
+    padding: 0.65rem;
+}
+.bookcardbtnsdanger:hover { 
+    background: var(--danger-bg); 
+    border-color: var(--danger-muted); 
+    transform: translateY(-2px); }
 .btn-danger:hover { 
     background: var(--danger-bg); 
     border-color: var(--danger-muted); 
@@ -233,10 +271,6 @@ tbody tr:hover .book-cover { transform: scale(1.05) rotate(5deg); }
 }
 .status-available { background: var(--success-bg); color: var(--success-muted); border: 1px solid rgba(45, 212, 191, 0.2); }
 .status-lent { background: var(--danger-bg); color: var(--danger-muted); border: 1px solid rgba(251, 113, 133, 0.2); }
-
-.action-btns { display: flex; gap: 0.75rem; flex-wrap: wrap; }
-.action-btns button { padding: 0.5rem 1rem; font-size: 0.8rem; border-radius: 4px; }
-
 #fab {
     position: fixed; 
     right: 1.5rem;
