@@ -601,9 +601,9 @@ async function loadPublicCatalog(catalogId) {
                         </thead>
                         <tbody>
                             {#each filteredBooks as book (book.id)}
-                                <div transition:slide={{ duration: 300 }} animate:flip={{ duration: 400 }} style="display: contents;">
+                                <tr style="display: contents;" transition:slide={{ duration: 300 }} animate:flip={{ duration: 400 }}>
                                     <BookCard {book} isBorrowed={true} /> 
-                                </div>
+                                </tr>
                             {/each}
                         </tbody>
                     </table>
@@ -718,7 +718,7 @@ async function loadPublicCatalog(catalogId) {
                                 </thead>
                                 <tbody>
                                     {#each filteredBooks as book (book.id)}
-                                        <div transition:slide={{ duration: 300 }} animate:flip={{ duration: 400 }} style="display: contents;">
+                                        <tr style="display: contents;" transition:slide={{ duration: 300 }} animate:flip={{ duration: 400 }}>
                                             <BookCard 
                                                 {book} 
                                                 isBorrowed={currentCatalog.id === 'borrowed'} 
@@ -727,7 +727,7 @@ async function loadPublicCatalog(catalogId) {
                                                 onEdit={() => openModal(book)}
                                                 onOpenLend={() => openLendModal(book)}
                                             />
-                                        </div>
+                                        </tr>
                                     {/each}
                                 </tbody>
                             </table>
