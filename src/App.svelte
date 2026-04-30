@@ -126,11 +126,11 @@
 
     async function fetchUserData() {
         try {
-            let { data: profileData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', session.user.id)
-                .maybeSingle();
+             let { data: catalogsData } = await supabase
+             .from('catalogs')
+            .select('*')
+            .eq('user_id', session.user.id) 
+            .order('created_at', { ascending: true });
             if (!profileData) {
                 const tempUsername = session.user.email.split('@')[0];
                 const { data: newProf } = await supabase
