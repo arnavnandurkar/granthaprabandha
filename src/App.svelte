@@ -125,37 +125,55 @@
     });
 
     async function fetchUserData() {
-        try {
-            let { data: catalogsData } = await supabase
-             .from('catalogs')
+    try {
+      
+        let { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+        if (profileError) console.error("Profile read error:", profileError);
+
+        if (!profileData) {
+            const tempUsername = session.user.email.split('@')[0];
+            const { data: newProf, error: insertError } = await supabase
+                .from('profiles')
+                .insert([{ id: session.user.id, username: tempUsername }])
+                .select()
+                .maybeSingle(); 
+
+            if (insertError) {
+                console.error("Profile insert error (likely exists but RLS blocked read):", insertError);
+                profileData = { id: session.user.id, username: tempUsername };
+            } else {
+                profileData = newProf;
+            }
+        }
+        profile = profileData;
+
+        let { data: catalogsData, error: catalogError } = await supabase
+            .from('catalogs')
             .select('*')
             .eq('user_id', session.user.id) 
             .order('created_at', { ascending: true });
-            if (!profileData) {
-                const tempUsername = session.user.email.split('@')[0];
-                const { data: newProf } = await supabase
-                    .from('profiles')
-                    .insert([{ id: session.user.id, username: tempUsername }])
-                    .select()
-                    .single();
-                profileData = newProf;
-            }
-            profile = profileData;
-            if (catalogsData && catalogsData.length > 0) {
-                catalogs = catalogsData;
-                currentCatalog = catalogs[0];
-                fetchBooksForCatalog(currentCatalog.id);
-            } else {
-                catalogs = [];
-                currentCatalog = null;
-                books = []; 
-            }
-        } catch (err) {
-            console.error("Critical Data Fetch Error:", err);
-            showToast("Failed to load user data.", "error");
+
+        if (catalogError) console.error("Catalog fetch error:", catalogError);
+
+        if (catalogsData && catalogsData.length > 0) {
+            catalogs = catalogsData;
+            currentCatalog = catalogs[0];
+            fetchBooksForCatalog(currentCatalog.id);
+        } else {
+            catalogs = [];
+            currentCatalog = null;
+            books = []; 
         }
+    } catch (err) {
+        console.error("Critical Data Fetch Error:", err);
+        showToast("Failed to load user data.", "error");
     }
-    
+}
     async function fetchBooksForCatalog(catalogId) {
         if (catalogId === 'borrowed') {
             const { data, error } = await supabase
