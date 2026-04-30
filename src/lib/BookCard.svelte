@@ -29,7 +29,7 @@
    $: displayCover = book.coverUrl 
         ? book.coverUrl 
         : (book.isbn ? `https://covers.openlibrary.org/b/isbn/${book.isbn.trim()}-M.jpg` 
-        : 'Untitled.png');
+        : '/Untitled.png');
         
     $: currentRating = book.rating || 0;
     function setRating(stars, event) {
@@ -79,7 +79,7 @@
             src={displayCover} 
             class="book-cover" 
             alt="Cover of {book.title}" 
-            on:error={(e) => e.target.src = 'Untitled.png'}
+            on:error={(e) => e.target.src = '/Untitled.png'}
         />
     </td>
     <td data-label="Details">
