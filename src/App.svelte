@@ -449,23 +449,30 @@ async function loadPublicCatalog(catalogId) {
         updates.borrower_id = null;
     }
 
-    const { error } = await supabase
+    const { data, error } = await supabase
         .from('books')
         .update(updates)
-        .eq('id', id);
+        .eq('id', id)
+        .select(); 
 
-    if (!error) {
-        const isBeingReturned = updates.borrower === '' || updates.borrower === null;
-        
-        if (currentCatalog?.id === 'borrowed' && isBeingReturned) {
-            books = books.filter(b => b.id !== id);
-            showToast("Book returned to owner.", "success");
-        } else {
-            books = books.map(b => b.id === id ? { ...b, ...updates } : b);
-        }
-    } else {
+    if (error) {
         console.error("Database sync error:", error);
         showToast("Failed to sync change.", "error");
+        return;
+    }
+    if (!data || data.length === 0) {
+        console.error("Update failed: Row Level Security (RLS) blocked it or book not found.");
+        showToast("Database blocked the update. Check RLS policies.", "error");
+        return;
+    }
+
+    const isBeingReturned = updates.borrower === '' || updates.borrower === null;
+    
+    if (currentCatalog?.id === 'borrowed' && isBeingReturned) {
+        books = books.filter(b => b.id !== id);
+        showToast("Book returned to owner.", "success");
+    } else {
+        books = books.map(b => b.id === id ? data[0] : b);
     }
 }
     function toggleTheme() {
