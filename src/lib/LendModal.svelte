@@ -11,37 +11,42 @@
     let searchError = '';
 
     async function handleLend() {
-        if (!borrowerName.trim()) return;
-        
-        loading = true;
-        searchError = '';
-        let borrowerId = null;
-        if (borrowerName.startsWith('@')) {
-            const usernameToFind = borrowerName.substring(1).trim();
-            const { data } = await supabase
-                .from('profiles')
-                .select('id')
-                .eq('username', usernameToFind)
-                .maybeSingle();
+    if (!borrowerName.trim()) return;
+    
+    loading = true;
+    searchError = '';
 
-            if (data) {
-                borrowerId = data.id; 
-            } else {
-                searchError = "User not found. Check the username, or just type a regular name without the '@' symbol.";
-                loading = false;
-                return;
-            }
+    let borrowerId = null;
+    if (borrowerName.startsWith('@')) {
+        const usernameToFind = borrowerName.substring(1).trim();
+        
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('id')
+            .ilike('username', usernameToFind)
+            .maybeSingle();
+
+        if (error) {
+            console.error("Profile search error:", error);
         }
 
-        await onSave({ 
-            borrower: borrowerName.trim(), 
-            borrower_id: borrowerId 
-        });
-        
-        loading = false;
-        onClose();
+        if (data) {
+            borrowerId = data.id;
+        } else {
+            searchError = "User not found. Check the username, or just type a regular name without the '@' symbol.";
+            loading = false;
+            return;
+        }
     }
 
+    await onSave({ 
+        borrower: borrowerName.trim(), 
+        borrower_id: borrowerId 
+    });
+    
+    loading = false;
+    onClose();
+}
     function handleReturn() {
 
         onSave({ borrower: '', borrower_id: null });

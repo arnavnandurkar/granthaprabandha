@@ -439,52 +439,35 @@ async function loadPublicCatalog(catalogId) {
         }
     }   
 
-    function toggleLent(book) {
-        const index = getAbsoluteIndex(book);
-        if (index === -1) return;
-
-        if (books[index].borrower) {
-            showToast(`"${books[index].title}" was returned`);
-            books[index].borrower = "";
-        } else {
-            const name = prompt("Who is borrowing this book?");
-            if (name) {
-                books[index].borrower = name;
-                showToast(`Lent to ${name}`);
-            }
-        }
-        books = [...books];
-    }
-
     function editBook(book) {
         editingIndex = getAbsoluteIndex(book);
         isModalOpen = true;
     }
 
   async function updateBookDirectly(id, updates) {
-        if (updates.borrower === '' || updates.borrower === null) {
-            updates.borrower_id = null;
-        }
-
-        const { error } = await supabase
-            .from('books')
-            .update(updates)
-            .eq('id', id);
-            
-        if (!error) {
-            const isBeingReturned = updates.borrower_id === null;
-            
-            if (currentCatalog?.id === 'borrowed' && isBeingReturned) {
-                books = books.filter(b => b.id !== id);
-                showToast("Book returned to owner.", "success");
-            } else {
-                books = books.map(b => b.id === id ? { ...b, ...updates } : b);
-            }
-        } else {
-            console.error("Database sync error:", error);
-            showToast("Failed to sync change.", "error");
-        }
+    if (updates.borrower === '' || updates.borrower === null) {
+        updates.borrower_id = null;
     }
+
+    const { error } = await supabase
+        .from('books')
+        .update(updates)
+        .eq('id', id);
+
+    if (!error) {
+        const isBeingReturned = updates.borrower === '' || updates.borrower === null;
+        
+        if (currentCatalog?.id === 'borrowed' && isBeingReturned) {
+            books = books.filter(b => b.id !== id);
+            showToast("Book returned to owner.", "success");
+        } else {
+            books = books.map(b => b.id === id ? { ...b, ...updates } : b);
+        }
+    } else {
+        console.error("Database sync error:", error);
+        showToast("Failed to sync change.", "error");
+    }
+}
     function toggleTheme() {
         isLightMode = !isLightMode;
         if (isLightMode) {
