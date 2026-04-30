@@ -126,7 +126,7 @@
 
     async function fetchUserData() {
         try {
-             let { data: catalogsData } = await supabase
+            let { data: catalogsData } = await supabase
              .from('catalogs')
             .select('*')
             .eq('user_id', session.user.id) 
